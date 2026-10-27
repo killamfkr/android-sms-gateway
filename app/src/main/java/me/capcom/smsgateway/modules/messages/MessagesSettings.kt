@@ -68,6 +68,14 @@ class MessagesSettings(
     val workHoursEnd: String
         get() = storage.get(WORK_HOURS_END) ?: "19:00"
 
+    /**
+     * When true, outgoing MMS PDUs include an explicit From MSISDN instead of the
+     * WSP insert-address-token. Most carriers (and Google Messages) use the token;
+     * enable this only if your MMSC rejects token-based From headers.
+     */
+    val mmsUseExplicitFromMsisdn: Boolean
+        get() = storage.get<Boolean>(MMS_USE_EXPLICIT_FROM_MSISDN) ?: false
+
     private fun isInWorkHours(): Boolean {
         if (!workHoursEnabled) return true
 
@@ -168,6 +176,8 @@ class MessagesSettings(
         private const val WORK_HOURS_ENABLED = "work_hours_enabled"
         private const val WORK_HOURS_START = "work_hours_start"
         private const val WORK_HOURS_END = "work_hours_end"
+
+        private const val MMS_USE_EXPLICIT_FROM_MSISDN = "mms_use_explicit_from_msisdn"
     }
 
     override fun export(): Map<String, *> {
@@ -182,6 +192,7 @@ class MessagesSettings(
             WORK_HOURS_ENABLED to workHoursEnabled,
             WORK_HOURS_START to workHoursStart,
             WORK_HOURS_END to workHoursEnd,
+            MMS_USE_EXPLICIT_FROM_MSISDN to mmsUseExplicitFromMsisdn,
         )
     }
 
@@ -298,6 +309,15 @@ class MessagesSettings(
                     }
                     val newValue = if (raw != null && isValidTimeFormat(raw)) raw else "19:00"
                     val changed = this.workHoursEnd != newValue
+
+                    storage.set(key, newValue)
+
+                    changed
+                }
+
+                MMS_USE_EXPLICIT_FROM_MSISDN -> {
+                    val newValue = value?.toString()?.toBooleanStrictOrNull() ?: false
+                    val changed = this.mmsUseExplicitFromMsisdn != newValue
 
                     storage.set(key, newValue)
 

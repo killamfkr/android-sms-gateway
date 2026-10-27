@@ -424,13 +424,13 @@ class MessagesService(
             dao.updateSimNumber(id, simNumber + 1)
         }
 
-        // Resolve a subscription ID + MSISDN from the chosen SIM slot (if any).
-        // Verizon and some other US carriers silently drop MMS whose From
-        // header is the insert-address-token, so we pass an explicit MSISDN
-        // whenever the platform exposes one.
         val subscriptionId = simNumber?.let { SubscriptionsHelper.getSubscriptionId(context, it) }
-        val fromMsisdn = simNumber?.let { SubscriptionsHelper.getPhoneNumber(context, it) }
-            ?: SubscriptionsHelper.getActiveSimCards(context)?.firstOrNull()?.phoneNumber
+        val fromMsisdn = if (settings.mmsUseExplicitFromMsisdn) {
+            simNumber?.let { SubscriptionsHelper.getPhoneNumber(context, it) }
+                ?: SubscriptionsHelper.getActiveSimCards(context)?.firstOrNull()?.phoneNumber
+        } else {
+            null
+        }
 
         val decryptedContent = if (message.isEncrypted) {
             MessageContent.Mms(
@@ -455,9 +455,7 @@ class MessagesService(
 
         dao.updatePartsCount(id, 1 + decryptedContent.attachments.size)
 
-        // Don't set fromMsisdn — insert-address-token lets the MMSC fill
-        // the From field, which matches how Google Messages composes its
-        // PDUs and is what Verizon's MMSC expects.
+        // Default: insert-address-token (see SendReq). Optional explicit MSISDN in settings.
         mmsSender.send(id, recipients, decryptedContent, subscriptionId, fromMsisdn)
 
         // Move all recipients out of Pending immediately so the worker loop

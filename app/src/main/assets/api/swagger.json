@@ -1287,6 +1287,10 @@
           "work_hours_start": {
             "description": "WorkHoursStart is the start of the working hours window in HH:mm format (24-hour).",
             "type": "string"
+          },
+          "mms_use_explicit_from_msisdn": {
+            "description": "When true, outgoing MMS PDUs use an explicit From MSISDN instead of the WSP insert-address-token. Leave false unless your MMSC requires an explicit sender number.",
+            "type": "boolean"
           }
         },
         "type": "object"
