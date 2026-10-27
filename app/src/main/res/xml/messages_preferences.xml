@@ -2,6 +2,12 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <PreferenceCategory app:title="@string/messages_header">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="messages.mms_use_explicit_from_msisdn"
+            app:icon="@drawable/ic_send"
+            app:title="@string/mms_explicit_from_title"
+            app:summary="@string/mms_explicit_from_summary" />
         <DropDownPreference
             android:icon="@drawable/ic_sim_selection"
             android:defaultValue="OSDefault"

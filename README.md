@@ -90,6 +90,7 @@ SMS Gateway turns your Android smartphone into an SMS gateway. It's a lightweigh
 - 🔍 **Message filtering:** Filter the messages list by state (pending, sent, delivered, failed) and type (SMS, MMS, Data SMS) to find messages quickly.
 - ⏳ **Send rate limiting:** Restrict the number of messages sent per period (e.g., per 30 minutes) to avoid operator throttling.
 - ⏰ **Message scheduling:** Schedule messages for future delivery using the optional `scheduleAt` field (it must be a future timestamp).
+- 📵 **SMS/MMS only (no RCS):** Outgoing API traffic uses SMS/MMS; RCS chat is not available to third-party apps. For inbound webhooks, disable RCS on the device — see [docs/RCS.md](docs/RCS.md).
 
 🔒 Security and Privacy:
 
