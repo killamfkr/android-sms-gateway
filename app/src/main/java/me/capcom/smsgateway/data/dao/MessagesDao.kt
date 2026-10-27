@@ -67,6 +67,13 @@ interface MessagesDao {
     @Query("SELECT COUNT(*) FROM message WHERE state = 'Pending' AND priority >= :minPriority AND (scheduleAt IS NULL OR scheduleAt <= :now)")
     fun countExpeditedDue(minPriority: Byte, now: Date): Int
 
+    /** Recipients submitted to SmsManager/MMS stack but not yet confirmed Sent/Failed. */
+    @Query("SELECT COUNT(*) FROM messagerecipient WHERE state = 'Processed'")
+    fun countRecipientsAwaitingSendResult(): Int
+
+    @Query("SELECT COUNT(*) FROM message WHERE state = 'Pending' AND (scheduleAt IS NULL OR scheduleAt <= :now)")
+    fun countDuePending(now: Date): Int
+
     @Transaction
     @Query("SELECT *, `rowid` FROM message WHERE id = :id")
     fun get(id: String): MessageWithRecipients?

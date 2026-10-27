@@ -64,6 +64,8 @@
     <string name="logs">Logs</string>
     <string name="maximum">Maximum</string>
     <string name="messages_count">Messages count</string>
+    <string name="mms_explicit_from_title">MMS: explicit sender number</string>
+    <string name="mms_explicit_from_summary">Off by default (recommended). Turn on only if your carrier rejects MMS with the standard insert-address-token From header.</string>
     <string name="messages_header">Messages</string>
     <string name="messages">Messages…</string>
     <string name="minimum">Minimum</string>
