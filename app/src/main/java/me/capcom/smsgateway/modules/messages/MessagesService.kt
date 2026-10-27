@@ -290,8 +290,12 @@ class MessagesService(
                 if (priority < Message.PRIORITY_EXPEDITED
                     || previousPriority >= priority
                 ) {
-                    applyLimit()
+                    if (deferForRateLimit()) {
+                        return
+                    }
                 }
+
+                awaitSendQueueCapacity()
 
                 // skip work hours for expedited messages
                 if (priority < Message.PRIORITY_EXPEDITED && applyWorkHoursLimit()) {
@@ -316,30 +320,68 @@ class MessagesService(
                 }
             }
         } finally {
-            if (coroutineContext.isActive) {
-                synchronized(sendWorkerLock) {
-                    // After processing all pending messages, check if there are any scheduled messages for the future
-                    val nextScheduledTime = dao.nextScheduledTime() ?: 0
-                    if (nextScheduledTime > System.currentTimeMillis()) {
+            synchronized(sendWorkerLock) {
+                val now = System.currentTimeMillis()
+                val nextScheduledTime = dao.nextScheduledTime() ?: 0
+                when {
+                    nextScheduledTime > now ->
                         SendMessagesWorker.start(context, true, nextScheduledTime)
-                    }
+
+                    dao.countDuePending(Date()) > 0 ->
+                        SendMessagesWorker.start(context, true, SendMessagesWorker.IMMEDIATE)
                 }
             }
         }
     }
 
-    private suspend fun applyLimit() {
+    /**
+     * Android's radio stack typically accepts on the order of 30 outstanding SMS
+     * submissions before [SmsManager.RESULT_ERROR_LIMIT_EXCEEDED]. We mark
+     * recipients Processed as soon as [sendTextMessage] returns, so the worker
+     * must wait for SENT callbacks to drain before submitting more.
+     */
+    private suspend fun awaitSendQueueCapacity() {
+        while (dao.countRecipientsAwaitingSendResult() >= MAX_RECIPIENTS_AWAITING_SEND_RESULT) {
+            if (!coroutineContext.isActive) {
+                return
+            }
+            delay(SEND_QUEUE_POLL_MS)
+        }
+    }
+
+    /**
+     * When the configured send limit is reached, schedule a fresh worker instead
+     * of blocking this one for up to 30 minutes (which can hit WorkManager
+     * runtime limits and leave the queue stuck).
+     *
+     * @return `true` if this run should stop and a later worker was scheduled
+     */
+    private fun deferForRateLimit(): Boolean {
         if (!settings.limitEnabled) {
-            return
+            return false
         }
 
         val processedStats =
             dao.countProcessedFrom(System.currentTimeMillis() - settings.limitPeriod.duration)
         if (processedStats.count < settings.limitValue) {
-            return
+            return false
         }
 
-        delay(settings.limitPeriod.duration - (System.currentTimeMillis() - processedStats.lastTimestamp) + 1000L)
+        val wakeAt = processedStats.lastTimestamp + settings.limitPeriod.duration + 1000L
+        val delayMs = wakeAt - System.currentTimeMillis()
+        if (delayMs <= 0) {
+            return false
+        }
+
+        synchronized(sendWorkerLock) {
+            SendMessagesWorker.start(context, true, wakeAt)
+        }
+        logsService.insert(
+            LogEntry.Priority.INFO,
+            MODULE_NAME,
+            "Send limit reached (${settings.limitValue} per ${settings.limitPeriod}); resuming in ${delayMs / 1000}s",
+        )
+        return true
     }
 
     /**
@@ -749,5 +791,11 @@ class MessagesService(
             SmsManager.RESULT_RIL_GENERIC_ERROR -> "RESULT_RIL_GENERIC_ERROR (A RIL error occurred during the SMS send)"
             else -> "Unknown error code: $resultCode."
         }
+    }
+
+    private companion object {
+        /** Headroom under the typical ~30 SMS modem submission cap. */
+        const val MAX_RECIPIENTS_AWAITING_SEND_RESULT = 20
+        const val SEND_QUEUE_POLL_MS = 250L
     }
 }

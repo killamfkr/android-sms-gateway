@@ -88,7 +88,7 @@ SMS Gateway turns your Android smartphone into an SMS gateway. It's a lightweigh
 - 📦 **Batch webhook events:** Receive batched webhook deliveries when multiple messages arrive at once, reducing the number of requests.
 - 🛑 **Cancel pending messages:** Cancel queued messages before they are sent.
 - 🔍 **Message filtering:** Filter the messages list by state (pending, sent, delivered, failed) and type (SMS, MMS, Data SMS) to find messages quickly.
-- ⏳ **Send rate limiting:** Restrict the number of messages sent per period (e.g., per 30 minutes) to avoid operator throttling.
+- ⏳ **Send rate limiting:** Restrict the number of messages sent per period (e.g., per 30 minutes) to avoid operator throttling. If sending stops around 30 messages, see [docs/TROUBLESHOOTING_SEND_QUEUE.md](docs/TROUBLESHOOTING_SEND_QUEUE.md).
 - ⏰ **Message scheduling:** Schedule messages for future delivery using the optional `scheduleAt` field (it must be a future timestamp).
 - 📵 **SMS/MMS only (no RCS):** Outgoing API traffic uses SMS/MMS; RCS chat is not available to third-party apps. For inbound webhooks, disable RCS on the device — see [docs/RCS.md](docs/RCS.md).
 

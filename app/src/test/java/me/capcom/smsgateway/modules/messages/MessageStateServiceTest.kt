@@ -227,6 +227,15 @@ internal class FakeMessagesDao : MessagesDao {
 
     override fun countExpeditedDue(minPriority: Byte, now: Date): Int = 0
 
+    override fun countRecipientsAwaitingSendResult(): Int =
+        recipients.values.count { it.state == ProcessingState.Processed }
+
+    override fun countDuePending(now: Date): Int =
+        messages.values.count {
+            it.state == ProcessingState.Pending &&
+                (it.scheduleAt == null || !it.scheduleAt.after(now))
+        }
+
     override fun count(
         source: EntitySource,
         state: ProcessingState?,

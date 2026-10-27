@@ -87,6 +87,12 @@ class MessagesServiceTest {
         override fun countExpeditedDue(minPriority: Byte, now: Date): Int =
             throw UnsupportedOperationException("not used in dispatch test")
 
+        override fun countRecipientsAwaitingSendResult(): Int =
+            throw UnsupportedOperationException("not used in dispatch test")
+
+        override fun countDuePending(now: Date): Int =
+            throw UnsupportedOperationException("not used in dispatch test")
+
         override fun get(id: String): MessageWithRecipients? =
             throw UnsupportedOperationException("not used in dispatch test")
 
